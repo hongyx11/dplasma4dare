@@ -1,0 +1,4 @@
+[submodule "parsec"]
+	path = parsec
+	url = ../../icldisco/parsec.git
+	branch = master

@@ -1,0 +1,53 @@
+#!/bin/bash
+
+cat <<'EOF'
+Note about BLAS on Mac OS X:
+============================
+Apple Veclib does not contain LAPACKE, you have to either compile your
+own LAPACKE library that links with Apple Veclib -- or -- simpler
+use OpenBLAS (e.g., from `brew`).
+The performance hit of using OpenBLAS on M1 Mac is significant though,
+for this reason the Apple VecLib remains the default option.
+============================
+EOF
+with_blas=Apple
+
+# if icc/CLang is not set, detect the matching gcc/gfortran pair
+# OS X has no fortran by default, and flavor varies between fink, port, self installed, etc
+# Lets try to guess and use the same version for all 3 compilers
+if [ "x$enable_fortran" != xno -a ! -x "$(command -v "$CC")" ]; then
+  for gf_exe in $FC $(command -v $(compgen -c gfortran)); do
+    gf_sfx=${gf_exe#*gfortran}
+    gf_dir=$(dirname "$gf_exe")
+    gcc_exe=$gf_dir/gcc$gf_sfx
+    gxx_exe=$gf_dir/g++$gf_sfx
+
+    if [ -x "$gcc_exe" -a -x "$gxx_exe" -a -x "$gf_exe" ]; then
+      echo "Compilers detected: $gcc_exe $gxx_exe $gf_exe; override by setting CC/FC/CXX"
+      ENVVARS+=" CC=$gcc_exe CXX=$gxx_exe FC=$gf_exe"
+      break
+    fi
+  done
+fi
+
+# We have Brew OpenBLAS, lets make sure it gets auto-detected if requested
+if [ -d /usr/local/opt/openblas/lib ]; then
+  ENVVARS+=" LDFLAGS+=' -L/usr/local/opt/openblas/lib'"
+fi
+
+# OS-X 12.2 provides Bison 2.3, we need Bison 3 or better
+# Try to get the 'brew' Bison if installed
+if [ -d /usr/local/opt/bison ]; then
+  ENVVARS+=" BISON_ROOT=${BISON_ROOT:-/usr/local/opt/bison}"
+fi
+# Try to get the 'MacPort' Bison if installed
+if [ -x /opt/local/bin/bison ]; then
+  ENVVARS+=" BISON_ROOT=${BISON_ROOT:-/opt/local}"
+fi
+# Try to get the 'Fink' Bison if installed
+if [ -x /sw/bin/bison ]; then
+  ENVVARS+=" BISON_ROOT=${BISON_ROOT:-/sw}"
+fi
+# If Bison still not found, please set BISON_ROOT by hand
+
+

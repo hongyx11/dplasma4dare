@@ -1,0 +1,6 @@
+include(DplasmaCompilerFlags)
+list (FIND DPLASMA_PRECISIONS "d" _index)
+if (${_index} GREATER -1)
+  add_executable(dqr_driver "dqr_driver.c")
+  target_link_libraries(dqr_driver dplasma)
+endif (${_index} GREATER -1)
